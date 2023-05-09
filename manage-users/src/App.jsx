@@ -34,7 +34,7 @@ function App() {
 
   function sortUsers(filter1, filter2) {
     setCountry(filter1 == "location" ? true : false);
-    setUsers(users.sort((first, second) => (first[filter1][filter2] > second[filter1][filter2]) ? 1 : -1));
+    setUsers(users.toSorted((first, second) => (first[filter1][filter2] > second[filter1][filter2]) ? 1 : -1));
     setChange(!change);
   }
 
