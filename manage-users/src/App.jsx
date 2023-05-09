@@ -39,7 +39,7 @@ function App() {
   }
 
   function deleteUser(id) {
-    const result = users.filter(user => user.id.name !== id);
+    const result = users.filter(user => user.login.uuid !== id);
     setUsers(result);
     copy_users.current = [...result];
     setChange(!change);
@@ -99,12 +99,12 @@ function App() {
           <tbody>
           {
           (users ?? []).map((user,i) => (
-            <tr key={i} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
+            <tr key={user.login.uuid} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
               <td><img src={user.picture.large} alt='user-img' /></td>
               <td>{user.name.first}</td>
               <td>{user.name.last}</td>
               <td>{user.location.country}</td>
-              <td><button onClick={() => deleteUser(user.id.name)}>Borrar</button></td>
+              <td><button onClick={() => deleteUser(user.login.uuid)}>Borrar</button></td>
             </tr>
           ))}
           </tbody>
