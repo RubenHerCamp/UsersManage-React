@@ -20,7 +20,7 @@ function App() {
   useEffect(() => {
     if (!users) {
       setIsLoading(true);
-      fetch('https://randomuser.me/api?results=20')
+      fetch('https://randomuser.me/api?results=100')
       .then((response) => response.json())
       .then((data) => {
         // console.log(data);
