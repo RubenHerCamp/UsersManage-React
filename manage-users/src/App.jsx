@@ -53,14 +53,14 @@ function App() {
   function deleteUser(id) {
     const result = users.filter(user => user.login.uuid !== id);
     setUsers(result);
-    setFilterUsers(result);
+    sortUsers();
     // setFilterUsers([...result]);
     // setChange(!change);
   }
 
   function resetUsers() {
     setUsers([...init_users.current]);
-    setFilterUsers([...init_users.current]);
+    sortUsers();
     // setFilterUsers([...init_users.current]);
     // setChange(!change);
   }
