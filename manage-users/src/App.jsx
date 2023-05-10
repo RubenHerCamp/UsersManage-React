@@ -16,7 +16,7 @@ function App() {
   const [style, setStyle] = useState(false);
   // const [change, setChange] = useState(false);
   const [country, setCountry] = useState(false);
-  const [filter_users, setFilterUsers] = useState(undefined);
+  const [filtered_users, setFilterUsers] = useState(undefined);
 
   useEffect(() => {
     if (!users) {
@@ -26,6 +26,7 @@ function App() {
       .then((data) => {
         // console.log(data);
         setUsers(data.results);
+        setFilterUsers(data.results);
         init_users.current = [...data.results];
         // copy_users.current = [...data.results];
         setIsLoading(false);
@@ -33,38 +34,51 @@ function App() {
     }
   }, []);
 
-  function sortUsers(filter1, filter2) {
-    setCountry(filter1 == "location" ? true : false);
-    setUsers(users.toSorted((first, second) => (first[filter1][filter2] > second[filter1][filter2]) ? 1 : -1));
+  function sortUsers(filter1=null, filter2=null) {
+    if (filter1 && filter2) {
+      setCountry(filter1 == "location" ? true : false);
+      setFilterUsers(users.toSorted((first, second) => (first[filter1][filter2] > second[filter1][filter2]) ? 1 : -1 ));
+    } else {
+      setFilterUsers(users);
+    }
     // setChange(!change);
+  }
+
+  function searchCountry(event) {
+    const search = event.target.value.toLowerCase();
+    // console.log(search);
+    setFilterUsers(search ? users.filter(user => user.location.country.toLowerCase().includes(search)) : users);
   }
 
   function deleteUser(id) {
     const result = users.filter(user => user.login.uuid !== id);
     setUsers(result);
-    setFilterUsers([...result]);
+    setFilterUsers(result);
+    // setFilterUsers([...result]);
     // setChange(!change);
   }
 
   function resetUsers() {
     setUsers([...init_users.current]);
     setFilterUsers([...init_users.current]);
+    // setFilterUsers([...init_users.current]);
     // setChange(!change);
   }
 
   function noOrderCountry() {
-    // setUsers([...filter_users]);
-    setFilterUsers(undefined);
+    sortUsers();
     setCountry(!country);
+    // setUsers([...filter_users]);
+    // setFilterUsers(undefined);
     // setChange(!change);
   }
 
-  function filterUserCountry(event) {
-    const search = event.target.value.toLowerCase();
-    const result = search ? setFilterUsers(users.filter(user => user.location.country.toLowerCase().includes(search))) : setFilterUsers(undefined);
-    // console.log(result);
-    // setChange(!change);
-  }
+  // function filterUserCountry(event) {
+  //   const search = event.target.value.toLowerCase();
+  //   const result = search ? setFilterUsers(users.filter(user => user.location.country.toLowerCase().includes(search))) : setFilterUsers(undefined);
+  //   console.log(result);
+  //   setChange(!change);
+  // }
 
   // const SortUsersName = element => users.sort((first, second) => (first.name.first > second.name.first) ? 1 : -1);
 
@@ -81,7 +95,7 @@ function App() {
         <button onClick={resetUsers}>
           Resetear estado
         </button>
-        <input onChange={filterUserCountry} placeholder="Filtra por país"/>
+        <input onChange={searchCountry} placeholder="Filtra por país"/>
       </header>
       <main>
         { isLoading || !users ? (
@@ -99,7 +113,7 @@ function App() {
           </thead>
           <tbody>
           {
-          (filter_users ? filter_users ?? [] : users ?? []).map((user,i) => (
+          (filtered_users ?? []).map((user,i) => (
             <tr key={user.login.uuid} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
               <td><img src={user.picture.large} alt='user-img' /></td>
               <td>{user.name.first}</td>
