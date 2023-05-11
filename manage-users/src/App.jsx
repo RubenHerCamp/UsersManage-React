@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import './App.css'
 // const obj = {obj1:4,obj2:4}
 // --> const shallowCopy = {...obj}
@@ -13,7 +14,13 @@ import './App.css'
 // param ascendent descendent
 // 300ml abans de filtrar (debounce)
 
+function useQuery() {
+  const { search } = useLocation();
+  return React.useMemo(() => new URLSearchParams(search), [search]);
+}
+
 function App() {
+  const query = useQuery();
   const [users, setUsers] = useState(undefined);
   const init_users = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -123,7 +130,7 @@ function App() {
           </thead>
           <tbody>
           {
-          ( filteredUsers ).map((user,i) => (
+          ( filteredUsers ?? [] ).map((user,i) => (
             <tr key={user.login.uuid} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
               <td><img src={user.picture.large} alt='user-img' /></td>
               <td>{user.name.first}</td>
