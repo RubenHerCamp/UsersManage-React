@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
 import './App.css'
 // const obj = {obj1:4,obj2:4}
 // --> const shallowCopy = {...obj}
@@ -11,12 +11,11 @@ import './App.css'
 function App() {
   const [users, setUsers] = useState(undefined);
   const init_users = useRef(null);
-  // const copy_users = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [style, setStyle] = useState(false);
-  // const [change, setChange] = useState(false);
   const [country, setCountry] = useState(false);
-  const [filtered_users, setFilterUsers] = useState(undefined);
+  const [filter, setFilter] = useState(undefined);
+  const [sort, setSort] = useState(undefined);
 
   useEffect(() => {
     if (!users) {
@@ -26,61 +25,67 @@ function App() {
       .then((data) => {
         // console.log(data);
         setUsers(data.results);
-        setFilterUsers(data.results);
         init_users.current = [...data.results];
-        // copy_users.current = [...data.results];
         setIsLoading(false);
       });
     }
   }, []);
 
-  function sortUsers(filter1=null, filter2=null) {
-    if (filter1 && filter2) {
-      setCountry(filter1 == "location" ? true : false);
-      setFilterUsers(users.toSorted((first, second) => (first[filter1][filter2] > second[filter1][filter2]) ? 1 : -1 ));
-    } else {
-      setFilterUsers(users);
-    }
-    // setChange(!change);
-  }
+  const filteredUsers = useMemo (
+    () => {
+      if (filter) {
+        return users.filter((user) => {
+          return user.location.country.toLowerCase().includes(filter.toLowerCase());
+        })
+      } else {
+        return users;
+      }
+    },[filter, users]
+  );
 
-  function searchCountry(event) {
-    const search = event.target.value.toLowerCase();
-    // console.log(search);
-    setFilterUsers(search ? users.filter(user => user.location.country.toLowerCase().includes(search)) : users);
-  }
+  const SortByName = () => users.toSorted((first, second) => (first["name"]["first"] > second["name"]["first"]) ? 1 : -1 );
+  const SortBySurname = () => users.toSorted((first, second) => (first["name"]["last"] > second["name"]["last"]) ? 1 : -1 );
+  const SortByCountry = () => users.toSorted((first, second) => (first["location"]["country"] > second["location"]["country"]) ? 1 : -1 );
+
+  const SortedUsers = useMemo (
+    () => {
+      if (sort) {
+        if (sort == "name") {
+          return SortByName();
+        } else if (sort == "surname") {
+          return SortBySurname();
+        } else {
+          setCountry(!country);
+          return SortByCountry();
+        }
+      } else {
+        return users;
+      }
+    },[sort, users]
+  );
+
+  const handleFilter = (event) => {
+    const text = event.target.value.toLowerCase();
+    setFilter(text);
+  };
+
+  const handleSort = (text) => {
+    setSort(text);
+  };
 
   function deleteUser(id) {
     const result = users.filter(user => user.login.uuid !== id);
     setUsers(result);
-    sortUsers();
-    // setFilterUsers([...result]);
-    // setChange(!change);
   }
 
   function resetUsers() {
     setUsers([...init_users.current]);
-    sortUsers();
-    // setFilterUsers([...init_users.current]);
-    // setChange(!change);
   }
 
   function noOrderCountry() {
-    sortUsers();
     setCountry(!country);
-    // setUsers([...filter_users]);
-    // setFilterUsers(undefined);
-    // setChange(!change);
+    setSort(undefined);
   }
-
-  // function filterUserCountry(event) {
-  //   const search = event.target.value.toLowerCase();
-  //   const result = search ? setFilterUsers(users.filter(user => user.location.country.toLowerCase().includes(search))) : setFilterUsers(undefined);
-  //   console.log(result);
-  //   setChange(!change);
-  // }
-
-  // const SortUsersName = element => users.sort((first, second) => (first.name.first > second.name.first) ? 1 : -1);
 
   return (
     <div className='App'>
@@ -89,13 +94,13 @@ function App() {
         <button onClick={() => setStyle((style) => !style)}>
           Colorear filas
         </button>
-        <button onClick={() => country ? noOrderCountry() : sortUsers("location","country")}>
+        <button onClick={() => country ? noOrderCountry() : handleSort("country")}>
           { country ? 'No ordenar por país' : 'Ordenar por país' }
         </button>
         <button onClick={resetUsers}>
           Resetear estado
         </button>
-        <input onChange={searchCountry} placeholder="Filtra por país"/>
+        <input onChange={handleFilter} placeholder="Filtra por país"/>
       </header>
       <main>
         { isLoading || !users ? (
@@ -105,15 +110,15 @@ function App() {
           <thead>
             <tr>
               <th>Foto</th>
-              <th className='cursor' onClick={() => sortUsers("name","first")}>Nombre</th>
-              <th className='cursor' onClick={() => sortUsers("name","last")}>Apellido</th>
-              <th className='cursor' onClick={() => sortUsers("location","country")}>Pais</th>
+              <th className='cursor' onClick={() => handleSort("name")}>Nombre</th>
+              <th className='cursor' onClick={() => handleSort("surname")}>Apellido</th>
+              <th className='cursor' onClick={() => handleSort("country")}>Pais</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
           {
-          (filtered_users ?? []).map((user,i) => (
+          ( filter ? filteredUsers : SortedUsers).map((user,i) => (
             <tr key={user.login.uuid} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
               <td><img src={user.picture.large} alt='user-img' /></td>
               <td>{user.name.first}</td>
