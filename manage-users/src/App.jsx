@@ -31,18 +31,6 @@ function App() {
     }
   }, []);
 
-  const filteredUsers = useMemo (
-    () => {
-      if (filter) {
-        return users.filter((user) => {
-          return user.location.country.toLowerCase().includes(filter.toLowerCase());
-        })
-      } else {
-        return users;
-      }
-    },[filter, users]
-  );
-
   const SortByName = () => users.toSorted((first, second) => (first["name"]["first"] > second["name"]["first"]) ? 1 : -1 );
   const SortBySurname = () => users.toSorted((first, second) => (first["name"]["last"] > second["name"]["last"]) ? 1 : -1 );
   const SortByCountry = () => users.toSorted((first, second) => (first["location"]["country"] > second["location"]["country"]) ? 1 : -1 );
@@ -62,6 +50,18 @@ function App() {
         return users;
       }
     },[sort, users]
+  );
+
+  const filteredUsers = useMemo (
+    () => {
+      if (filter) {
+        return SortedUsers.filter((user) => {
+          return user.location.country.toLowerCase().includes(filter.toLowerCase());
+        })
+      } else {
+        return SortedUsers;
+      }
+    },[filter, SortedUsers]
   );
 
   const handleFilter = (event) => {
@@ -118,7 +118,7 @@ function App() {
           </thead>
           <tbody>
           {
-          ( filter ? filteredUsers : SortedUsers).map((user,i) => (
+          ( filteredUsers ).map((user,i) => (
             <tr key={user.login.uuid} className={ style ? (i%2 == 0 ? 'color-1' : 'color-2') : ''}>
               <td><img src={user.picture.large} alt='user-img' /></td>
               <td>{user.name.first}</td>
