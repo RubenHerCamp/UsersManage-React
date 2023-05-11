@@ -8,6 +8,11 @@ import './App.css'
 // --> const copyArray = [...arrayF]
 // const copyArray = Object.assign([],arrayF)
 
+// params sorted and filter
+// param page *
+// param ascendent descendent
+// 300ml abans de filtrar (debounce)
+
 function App() {
   const [users, setUsers] = useState(undefined);
   const init_users = useRef(null);
