@@ -50,12 +50,12 @@ function App() {
   const SortedUsers = useMemo (
     () => {
       if (sort) {
+        setCountry(sort == "country" ? true : false );
         if (sort == "name") {
           return SortByName();
         } else if (sort == "surname") {
           return SortBySurname();
         } else {
-          setCountry(!country);
           return SortByCountry();
         }
       } else {
