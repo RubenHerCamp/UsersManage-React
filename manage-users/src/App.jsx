@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import debouce from "lodash.debounce";
 import './App.css'
 // const obj = {obj1:4,obj2:4}
 // --> const shallowCopy = {...obj}
@@ -21,13 +23,17 @@ function useQuery() {
 
 function App() {
   const query = useQuery();
+  const navigate = useNavigate();
   const [users, setUsers] = useState(undefined);
   const init_users = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const [style, setStyle] = useState(false);
   const [country, setCountry] = useState(false);
-  const [filter, setFilter] = useState(undefined);
-  const [sort, setSort] = useState(undefined);
+  const filter = query.get("filter");
+  const sort = query.get("sort");
+  const order = query.get("order") ? query.get("order") : "upward";
+  // const [filter, setFilter] = useState(undefined);
+  // const [sort, setSort] = useState(value_sort);
 
   useEffect(() => {
     if (!users) {
@@ -43,14 +49,14 @@ function App() {
     }
   }, []);
 
-  const SortByName = () => users.toSorted((first, second) => (first["name"]["first"] > second["name"]["first"]) ? 1 : -1 );
-  const SortBySurname = () => users.toSorted((first, second) => (first["name"]["last"] > second["name"]["last"]) ? 1 : -1 );
-  const SortByCountry = () => users.toSorted((first, second) => (first["location"]["country"] > second["location"]["country"]) ? 1 : -1 );
+  const SortByName = () => users.toSorted((first, second) => (first["name"]["first"] > second["name"]["first"]) ? (order=="upward" ? 1 : -1) : (order=="upward" ? -1 : 1) );
+  const SortBySurname = () => users.toSorted((first, second) => (first["name"]["last"] > second["name"]["last"]) ? (order=="upward" ? 1 : -1) : (order=="upward" ? -1 : 1) );
+  const SortByCountry = () => users.toSorted((first, second) => (first["location"]["country"] > second["location"]["country"]) ? (order=="upward" ? 1 : -1) : (order=="upward" ? -1 : 1) );
 
   const SortedUsers = useMemo (
     () => {
-      if (sort) {
-        setCountry(sort == "country" ? true : false );
+      setCountry(sort == "country" ? true : false );
+      if (sort && users) {
         if (sort == "name") {
           return SortByName();
         } else if (sort == "surname") {
@@ -61,7 +67,7 @@ function App() {
       } else {
         return users;
       }
-    },[sort, users]
+    },[sort, order, users]
   );
 
   const filteredUsers = useMemo (
@@ -78,12 +84,20 @@ function App() {
 
   const handleFilter = (event) => {
     const text = event.target.value.toLowerCase();
-    setFilter(text);
+    if (sort && text) {
+      navigate('/?sort='+sort+'&order='+order+'&filter='+text);
+    } else if (sort) {
+      navigate('/?sort='+sort+'&order='+order);
+    } else {
+      navigate('/?filter='+text);
+    }
+    // navigate(sort ? '/?sort='+sort+'&filter='+text : '/?filter='+text);
+    // setFilter(text);
   };
 
-  const handleSort = (text) => {
-    setSort(text);
-  };
+  // const handleSort = (text) => {
+  //   setSort(text);
+  // };
 
   function deleteUser(id) {
     const result = users.filter(user => user.login.uuid !== id);
@@ -94,10 +108,10 @@ function App() {
     setUsers([...init_users.current]);
   }
 
-  function noOrderCountry() {
-    setCountry(!country);
-    setSort(undefined);
-  }
+  // function noOrderCountry() {
+  //   setCountry(!country);
+  //   setSort(undefined);
+  // }
 
   return (
     <div className='App'>
@@ -106,13 +120,14 @@ function App() {
         <button onClick={() => setStyle((style) => !style)}>
           Colorear filas
         </button>
-        <button onClick={() => country ? noOrderCountry() : handleSort("country")}>
+        <Link to={country ? "/" : (filter ? "/?sort=country&&filter="+filter : "/?sort=country")}>{ country ? 'No ordenar por país' : 'Ordenar por país' }</Link>
+        {/* <button onClick={() => country ? noOrderCountry() : handleSort("country")}>
           { country ? 'No ordenar por país' : 'Ordenar por país' }
-        </button>
+        </button> */}
         <button onClick={resetUsers}>
           Resetear estado
         </button>
-        <input onChange={handleFilter} placeholder="Filtra por país"/>
+        <input onChange={debouce(handleFilter, 300)} placeholder="Filtra por país"/>
       </header>
       <main>
         { isLoading || !users ? (
@@ -122,9 +137,24 @@ function App() {
           <thead>
             <tr>
               <th>Foto</th>
-              <th className='cursor' onClick={() => handleSort("name")}>Nombre</th>
-              <th className='cursor' onClick={() => handleSort("surname")}>Apellido</th>
-              <th className='cursor' onClick={() => handleSort("country")}>Pais</th>
+              <th className='cursor'>
+                {sort!="name" || order=="falling" ? <Link to={filter ? "/?sort=name&order=upward&filter="+filter : "/?sort=name&order=upward"}>Nombre</Link> : ""}
+                {sort=="name" && order=="upward" ? <Link to={filter ? "/?sort=name&order=falling&filter="+filter : "/?sort=name&order=falling"}>Nombre</Link> : ""}
+                { sort=="name" && order=="upward" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg> : ''}
+                { sort=="name" && order=="falling" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg> : '' }
+              </th>
+              <th className='cursor'>
+                {sort!="surname" || order=="falling" ? <Link to={filter ? "/?sort=surname&order=upward&filter="+filter : "/?sort=surname&order=upward"}>Apellido</Link> : ""}
+                {sort=="surname" && order=="upward" ? <Link to={filter ? "/?sort=surname&order=falling&filter="+filter : "/?sort=surname&order=falling"}>Apellido</Link> : ""}
+                { sort=="surname" && order=="upward" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg> : ''}
+                { sort=="surname" && order=="falling" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg> : '' }
+              </th>
+              <th className='cursor'>
+                {sort!="country" || order=="falling" ? <Link to={filter ? "/?sort=country&order=upward&filter="+filter : "/?sort=country&order=upward"}>Pais</Link> : ""}
+                {sort=="country" && order=="upward" ? <Link to={filter ? "/?sort=country&order=falling&filter="+filter : "/?sort=country&order=falling"}>Pais</Link> : ""}
+                { sort=="country" && order=="upward" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg> : ''}
+                { sort=="country" && order=="falling" ? <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg> : '' }
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
